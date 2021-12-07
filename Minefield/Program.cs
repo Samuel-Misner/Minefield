@@ -249,7 +249,7 @@ namespace Minefield
             int mines = 0;
 
             Random random = new Random();
-            Console.WriteLine("What size would you like the grid to be?");
+            Console.WriteLine("What size would you like the field to be?");
 
             Console.Write("x: ");
 
@@ -333,7 +333,7 @@ namespace Minefield
                 int userX = 0;
                 int userY = 0;
 
-                Console.Write("Please enter coordinates on the grid (x y): ");
+                Console.Write("Please enter coordinates on the field (x y): ");
                 validInput = false;
                 do
                 {
@@ -345,7 +345,7 @@ namespace Minefield
                     }
                     else
                     {
-                        Console.Write("Please enter coordinates on the grid (x y): ");
+                        Console.Write("Please enter coordinates on the field (x y): ");
                     }
                 } while (!validInput);
 
