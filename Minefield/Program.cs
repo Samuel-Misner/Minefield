@@ -167,23 +167,12 @@ namespace Minefield
                         }
                         else
                         {
-                            line += "| ";
+                            line += GetBorderString(x, y);
                         }
                     }
                     else
                     {
-                        if (x == -1)
-                        {
-                            line += " -";
-                        }
-                        else if (x >= 0 && x < FieldX)
-                        {
-                            line += "--";
-                        }
-                        else if (x < FieldX)
-                        {
-                            line += "- ";
-                        }
+                        line += GetBorderString(x, y);
                     }
                 }
                 Console.WriteLine(line);
@@ -216,6 +205,28 @@ namespace Minefield
                 }
             }
         } // Returns the string that will display for a cell
+        public string GetBorderString(int x, int y)
+        {
+            if ((x == -1 || x == FieldX) && (y != -1 && y != FieldY))
+            {
+                return "| ";
+            }
+            else
+            {
+                if (x == -1)
+                {
+                    return " -";
+                }
+                else if (x >= 0 && x < FieldX)
+                {
+                    return "--";
+                }
+                else
+                {
+                    return "  ";
+                }
+            }
+        }
         public void UncoverCells()
         {
             for (int y = 0; y < FieldY; y++)
