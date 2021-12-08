@@ -253,6 +253,10 @@ namespace Minefield
                     }
                     else
                     {
+                        if (IsFlagged(cell) && cell.Contains >= 0)
+                        {
+                            FlagCell(cell);
+                        }
                         UncoverCell(cell);
                     }
                 }
