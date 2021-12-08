@@ -13,145 +13,18 @@ namespace Minefield
         public int Mines;
         public int CurrentMines;
         public List<List<Cell>> Cells;
-        public Field(int x, int y, List<List<Cell>> cells, int mines)
+        public Field(int x, int y, int mines)
         {
             FieldX = x;
             FieldY = y;
             PlayerX = 0;
             PlayerY = FieldY - 1;
-            Cells = cells;
             Mines = mines;
             CurrentMines = mines;
+            Cells = new List<List<Cell>>();
             GenerateField();
         }
 
-        public void Flag(Cell cell)
-        {
-            if (cell.Covered)
-            {
-                if (cell.Flagged)
-                {
-                    CurrentMines++;
-                }
-                else
-                {
-                    CurrentMines--;
-                }
-                cell.Flagged = !cell.Flagged;
-            }
-        }
-
-        public void UncoverCells()
-        {
-            for (int y = 0; y < FieldY; y++)
-            {
-                for (int x = 0; x < FieldX; x++)
-                {
-                    Cells[y][x].Covered = false;
-                }
-            }
-        }
-        public void PrintField()
-        {
-            Console.WriteLine($"Mines Left: {CurrentMines}\n");
-
-            List<List<Cell>> cells = Cells;
-
-            int fieldY = cells.Count;
-            int fieldX = cells[0].Count;
-
-            for (int y = 0; y < fieldY; y++)
-            {
-                string line = "";
-                for (int x = 0; x < fieldX; x++)
-                {
-                    if (PlayerX == x && PlayerY == y)
-                    {
-                        Console.Write(line);
-                        line = "";
-                    }
-                    if (cells[y][x].Covered)
-                    {
-                        if (cells[y][x].Flagged)
-                        {
-                            line += "! ";
-                        }
-                        else
-                        {
-                            line += "x ";
-                        }
-                    }
-                    else
-                    {
-                        if (cells[y][x].Contains > 0)
-                        {
-                            line += $"{cells[y][x].Contains} ";
-                        }
-                        else if (cells[y][x].Contains == 0)
-                        {
-                            line += "- ";
-                        }
-                        else if (cells[y][x].Contains == -1)
-                        {
-                            line += "* ";
-                        }
-                    }
-                    if (PlayerX == x && PlayerY == y)
-                    {
-                        Console.BackgroundColor = ConsoleColor.White;
-                        Console.Write(line[0].ToString(), ConsoleColor.White);
-                        Console.ResetColor();
-                        Console.Write(line[1]);
-                        line = "";
-                    }
-                }
-                Console.WriteLine(line);
-            }
-            Console.WriteLine("\n\nUncover: X\nFlag: F");
-        }
-
-        public void UncoverSurroundingCells(int cellX, int cellY)
-        {
-            for (int y = cellY - 1; y <= cellY + 1; y++)
-            {
-                if (y >= 0 && y < FieldY)
-                {
-                    for (int x = cellX - 1; x <= cellX + 1; x++)
-                    {
-                        if (x >= 0 && x < FieldX)
-                        {
-                            if (Cells[y][x].Covered)
-                            {
-                                Cells[y][x].Covered = false;
-                                if (Cells[y][x].Contains == 0)
-                                {
-                                    UncoverSurroundingCells(x, y);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        public void AdjustSurroundingCells(int cellX, int cellY)
-        {
-            for (int y = cellY - 1; y <= cellY + 1; y++)
-            {
-                if (y >= 0 && y < FieldY)
-                {
-                    for (int x = cellX - 1; x <= cellX + 1; x++)
-                    {
-                        if (x >= 0 && x < FieldX)
-                        {
-                            if (Cells[y][x].Contains != -1)
-                            {
-                                Cells[y][x].Contains++;
-                            }
-                        }
-                    }
-                }
-            }
-        }
         public void GenerateField()
         {
             for (int y = 0; y < FieldY; y++)
@@ -173,25 +46,177 @@ namespace Minefield
                 }
             }
 
+            List<int[]> minesList = new List<int[]>();
+
             for (int i = 0; i < Mines; i++)
             {
                 int num = rand.Next(0, coordinateList.Count);
                 Cells[coordinateList[num][1]][coordinateList[num][0]].Contains = -1;
+                minesList.Add(coordinateList[num]);
                 coordinateList.RemoveAt(num);
             }
 
-            for (int y = 0; y < FieldY; y++)
+            for (int i = 0; i < minesList.Count; i++)
             {
-                for (int x = 0; x < FieldX; x++)
+                Cells[minesList[i][1]][minesList[i][0]].Contains = -1;
+                AdjustSurroundingCells(minesList[i][0], minesList[i][1]);
+            }
+        }
+        public void AdjustSurroundingCells(int cellX, int cellY)
+        {
+            for (int y = cellY - 1; y <= cellY + 1; y++)
+            {
+                if (y >= 0 && y < FieldY)
                 {
-                    if (Cells[y][x].Contains == -1)
+                    for (int x = cellX - 1; x <= cellX + 1; x++)
                     {
-                        AdjustSurroundingCells(x, y);
+                        if (x >= 0 && x < FieldX)
+                        {
+                            if (Cells[y][x].Contains != -1)
+                            {
+                                Cells[y][x].Contains++;
+                            }
+                        }
                     }
                 }
             }
         }
+        public Cell GetPlayerCell()
+        {
+            return Cells[PlayerY][PlayerX];
+        }
+        public bool IsCovered(Cell cell)
+        {
+            return cell.Covered;
+        }
+        public void UncoverCell(Cell cell)
+        {
+            cell.Covered = false;
+        }
+        public void UncoverSurroundingCells(int cellX, int cellY)
+        {
+            for (int y = cellY - 1; y <= cellY + 1; y++)
+            {
+                if (y >= 0 && y < FieldY)
+                {
+                    for (int x = cellX - 1; x <= cellX + 1; x++)
+                    {
+                        if (x >= 0 && x < FieldX)
+                        {
+                            if (Cells[y][x].Covered)
+                            {
+                                UncoverCell(Cells[y][x]);
+                                if (Cells[y][x].Contains == 0)
+                                {
+                                    UncoverSurroundingCells(x, y);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        public void FlagCell(Cell cell)
+        {
+            if (cell.Covered)
+            {
+                if (cell.Flagged)
+                {
+                    CurrentMines++;
+                }
+                else
+                {
+                    CurrentMines--;
+                }
+                cell.Flagged = !cell.Flagged;
+            }
+        }
+        public void PrintField()
+        {
+            Console.WriteLine($"Mines Left: {CurrentMines}\n");
 
+            for (int y = 0; y < FieldY; y++)
+            {
+                string line = "";
+                for (int x = 0; x < FieldX; x++)
+                {
+                    if (!(PlayerX == x && PlayerY == y))
+                    {
+                        line += GetCellString(Cells[y][x]);
+                    }
+                    else
+                    {
+                        Console.Write(line);
+                        line = "";
+                        line += GetCellString(Cells[y][x]);
+                        Console.BackgroundColor = ConsoleColor.White;
+                        Console.Write(line[0].ToString());
+                        Console.ResetColor();
+                        Console.Write(line[1]);
+                        line = "";
+                    }
+                }
+                Console.WriteLine(line);
+            }
+            Console.WriteLine("\n\nUncover: X\nFlag: F");
+        }
+        public string GetCellString(Cell cell)
+        {
+            if (cell.Covered)
+            {
+                if (cell.Flagged)
+                {
+                    return "! ";
+                }
+                else
+                {
+                    return "x ";
+                }
+            }
+            else
+            {
+                if (cell.Contains > 0)
+                {
+                    return $"{cell.Contains} ";
+                }
+                else if (cell.Contains == 0)
+                {
+                    return "- ";
+                }
+                else
+                {
+                    return "* ";
+                }
+            }
+        }
+        public void UncoverCells()
+        {
+            for (int y = 0; y < FieldY; y++)
+            {
+                for (int x = 0; x < FieldX; x++)
+                {
+                    UncoverCell(Cells[y][x]);
+                }
+            }
+        }
+        public void FlagMines()
+        {
+            for (int y = 0; y < FieldY; y++)
+            {
+                for (int x = 0; x < FieldX; x++)
+                {
+                    if (Cells[y][x].Contains == -1 && Cells[y][x].Flagged == false && Cells[y][x].Covered)
+                    {
+                        FlagCell(Cells[y][x]);
+                    }
+                }
+            }
+        }
+        public void RemovePlayer()
+        {
+            PlayerX = -1;
+            PlayerY = -1;
+        }
         public bool CheckWin()
         {
             int checkedCells = 0;
@@ -210,19 +235,6 @@ namespace Minefield
                 }
             }
             return false;
-        }
-        public void FlagMines()
-        {
-            for (int y = 0; y < FieldY; y++)
-            {
-                for (int x = 0; x < FieldX; x++)
-                {
-                    if (Cells[y][x].Contains == -1 && Cells[y][x].Flagged == false && Cells[y][x].Covered)
-                    {
-                        Flag(Cells[y][x]);
-                    }
-                }
-            }
         }
         public void Win()
         {
@@ -255,13 +267,6 @@ namespace Minefield
     }
     class Program
     {
-        static void PrintOptions(List<string> options)
-        {
-            for (int i = 0; i < options.Count; i++)
-            {
-                Console.WriteLine($"{(i + 1) + ".", 2} {options[i]}");
-            }
-        }
         static void Main(string[] args)
         {
             bool run = true;
@@ -301,7 +306,7 @@ namespace Minefield
                 }
                 else
                 {
-                    Console.Write("Please enter a number greater than 1 for x: ");
+                    Console.Write("Please enter a number greater than 1 for y: ");
                 }
             } while (!validInput);
 
@@ -321,11 +326,9 @@ namespace Minefield
                 }
             } while (!validInput);
 
-            List<List<Cell>> cells = new List<List<Cell>>();
-
             Console.WriteLine("");
 
-            Field field = new Field(x, y, cells, mines);
+            Field field = new Field(x, y, mines);
 
             while (run)
             {
@@ -334,18 +337,18 @@ namespace Minefield
                 ConsoleKeyInfo input = Console.ReadKey(false);
                 if (input.Key == ConsoleKey.X)
                 {
-                    if (field.Cells[field.PlayerY][field.PlayerX].Covered)
+                    if (field.IsCovered(field.GetPlayerCell()))
                     {
-                        if (field.Cells[field.PlayerY][field.PlayerX].Contains > 0)
+                        if (field.GetPlayerCell().Contains > 0)
                         {
-                            field.Cells[field.PlayerY][field.PlayerX].Covered = false;
+                            field.UncoverCell(field.GetPlayerCell());
                             if (field.CheckWin())
                             {
                                 field.Win();
                                 run = false;
                             }
                         }
-                        else if (field.Cells[field.PlayerY][field.PlayerX].Contains == 0)
+                        else if (field.GetPlayerCell().Contains == 0)
                         {
                             field.UncoverSurroundingCells(field.PlayerX, field.PlayerY);
                             if (field.CheckWin())
@@ -354,12 +357,11 @@ namespace Minefield
                                 run = false;
                             }
                         }
-                        else if (field.Cells[field.PlayerY][field.PlayerX].Contains == -1)
+                        else if (field.GetPlayerCell().Contains == -1)
                         {
                             Console.Clear();
                             Console.WriteLine("You lost!\n");
-                            field.PlayerX = -1;
-                            field.PlayerY = -1;
+                            field.RemovePlayer();
                             field.UncoverCells();
                             field.PrintField();
                             run = false;
@@ -368,9 +370,9 @@ namespace Minefield
                 }
                 else if (input.Key == ConsoleKey.F)
                 {
-                    if (field.Cells[field.PlayerY][field.PlayerX].Covered)
+                    if (field.GetPlayerCell().Covered)
                     {
-                        field.Flag(field.Cells[field.PlayerY][field.PlayerX]);
+                        field.FlagCell(field.GetPlayerCell());
                     }
                 }
                 else if (input.Key == ConsoleKey.UpArrow && field.PlayerY > 0)
