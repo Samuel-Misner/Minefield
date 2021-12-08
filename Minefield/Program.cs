@@ -226,7 +226,7 @@ namespace Minefield
                     return "  ";
                 }
             }
-        }
+        } // Returns strings that build the border for the field
         public void UncoverCells()
         {
             for (int y = 0; y < FieldY; y++)
