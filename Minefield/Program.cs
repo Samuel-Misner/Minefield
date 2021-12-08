@@ -97,22 +97,27 @@ namespace Minefield
         {
             cell.Covered = false;
         } // Uncovers a cell
-        public void UncoverSurroundingCells(int cellX, int cellY)
+        public void UncoverSurroundingCells(Cell cell)
         {
-            for (int y = cellY - 1; y <= cellY + 1; y++)
+            for (int y = cell.CellY - 1; y <= cell.CellY + 1; y++)
             {
                 if (y >= 0 && y < FieldY)
                 {
-                    for (int x = cellX - 1; x <= cellX + 1; x++)
+                    for (int x = cell.CellX - 1; x <= cell.CellX + 1; x++)
                     {
                         if (x >= 0 && x < FieldX)
                         {
-                            if (Cells[y][x].Covered)
+                            Cell checkCell = Cells[y][x];
+                            if (checkCell.Covered)
                             {
-                                UncoverCell(Cells[y][x]);
-                                if (Cells[y][x].Contains == 0)
+                                if (IsFlagged(checkCell))
                                 {
-                                    UncoverSurroundingCells(x, y);
+                                    FlagCell(checkCell);
+                                }
+                                UncoverCell(checkCell);
+                                if (checkCell.Contains == 0)
+                                {
+                                    UncoverSurroundingCells(checkCell);
                                 }
                             }
                         }
@@ -215,11 +220,15 @@ namespace Minefield
             {
                 if (x == -1)
                 {
-                    return " -";
+                    return "  ";
                 }
-                else if (x >= 0 && x < FieldX)
+                else if (x >= 0 && x < FieldX - 1)
                 {
                     return "--";
+                }
+                else if (x == FieldX - 1)
+                {
+                    return "- ";
                 }
                 else
                 {
@@ -423,7 +432,7 @@ namespace Minefield
                             }
                             else if (field.GetPlayerCell().Contains == 0)
                             {
-                                field.UncoverSurroundingCells(field.PlayerX, field.PlayerY);
+                                field.UncoverSurroundingCells(field.GetPlayerCell());
                                 if (field.CheckWin())
                                 {
                                     field.Win();
