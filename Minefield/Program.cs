@@ -13,6 +13,7 @@ namespace Minefield
         public int Mines;
         public int CurrentMines;
         public List<List<Cell>> Cells;
+        public List<int[]> MineCoordinates;
         public Field(int x, int y, int mines)
         {
             FieldX = x;
@@ -22,6 +23,7 @@ namespace Minefield
             Mines = mines;
             CurrentMines = mines;
             Cells = new List<List<Cell>>();
+            MineCoordinates = new List<int[]>();
             GenerateField();
         }
 
@@ -46,23 +48,21 @@ namespace Minefield
                 }
             }
 
-            List<int[]> minesList = new List<int[]>();
-
             for (int i = 0; i < Mines; i++)
             {
                 int num = rand.Next(0, coordinateList.Count);
                 Cells[coordinateList[num][1]][coordinateList[num][0]].Contains = -1;
-                minesList.Add(coordinateList[num]);
+                MineCoordinates.Add(coordinateList[num]);
                 coordinateList.RemoveAt(num);
             }
 
-            for (int i = 0; i < minesList.Count; i++)
+            for (int i = 0; i < MineCoordinates.Count; i++)
             {
-                Cells[minesList[i][1]][minesList[i][0]].Contains = -1;
-                AdjustSurroundingCells(minesList[i][0], minesList[i][1]);
+                Cells[MineCoordinates[i][1]][MineCoordinates[i][0]].Contains = -1;
+                FillCellNumbers(MineCoordinates[i][0], MineCoordinates[i][1]);
             }
-        }
-        public void AdjustSurroundingCells(int cellX, int cellY)
+        } // Generates the positions of the mines in the field and fills in the cells surrounding the mines with numbers
+        public void FillCellNumbers(int cellX, int cellY)
         {
             for (int y = cellY - 1; y <= cellY + 1; y++)
             {
@@ -80,19 +80,23 @@ namespace Minefield
                     }
                 }
             }
-        }
+        } // Takes locations of mines and fills the surrounding cells with numbers
         public Cell GetPlayerCell()
         {
             return Cells[PlayerY][PlayerX];
-        }
+        } // Returns the current position of the cell the player is on
         public bool IsCovered(Cell cell)
         {
             return cell.Covered;
-        }
+        } // Returns whether a cell is covered or not
+        public bool IsFlagged(Cell cell)
+        {
+            return cell.Flagged;
+        } // Returns whether a cell is flagged or not
         public void UncoverCell(Cell cell)
         {
             cell.Covered = false;
-        }
+        } // Uncovers a cell
         public void UncoverSurroundingCells(int cellX, int cellY)
         {
             for (int y = cellY - 1; y <= cellY + 1; y++)
@@ -115,63 +119,86 @@ namespace Minefield
                     }
                 }
             }
-        }
+        } // Recursive method, used to uncover all adjacent empty cells
         public void FlagCell(Cell cell)
         {
-            if (cell.Covered)
+            if (IsFlagged(cell))
             {
-                if (cell.Flagged)
-                {
-                    CurrentMines++;
-                }
-                else
-                {
-                    CurrentMines--;
-                }
-                cell.Flagged = !cell.Flagged;
+                CurrentMines++;
             }
-        }
+            else if (!IsFlagged(cell) && !IsCovered(cell) && cell.Contains == -1)
+            {
+                CurrentMines--;
+            }
+            else
+            {
+                CurrentMines--;
+            }
+            cell.Flagged = !cell.Flagged;
+        } // Flags a cell
         public void PrintField()
         {
             Console.WriteLine($"Mines Left: {CurrentMines}\n");
 
-            for (int y = 0; y < FieldY; y++)
+            for (int y = -1; y < FieldY + 1; y++)
             {
                 string line = "";
-                for (int x = 0; x < FieldX; x++)
+                for (int x = -1; x < FieldX + 1; x++)
                 {
-                    if (!(PlayerX == x && PlayerY == y))
+                    if (y != -1 && y != FieldY)
                     {
-                        line += GetCellString(Cells[y][x]);
+                        if (x != -1 && x != FieldX)
+                        {
+                            if (!(PlayerX == x && PlayerY == y))
+                            {
+                                line += GetCellString(Cells[y][x]);
+                            }
+                            else
+                            {
+                                Console.Write(line);
+                                line = "";
+                                line += GetCellString(Cells[y][x]);
+                                Console.BackgroundColor = ConsoleColor.White;
+                                Console.Write(line[0]);
+                                Console.ResetColor();
+                                Console.Write(line[1]);
+                                line = "";
+                            }
+                        }
+                        else
+                        {
+                            line += "| ";
+                        }
                     }
                     else
                     {
-                        Console.Write(line);
-                        line = "";
-                        line += GetCellString(Cells[y][x]);
-                        Console.BackgroundColor = ConsoleColor.White;
-                        Console.Write(line[0].ToString());
-                        Console.ResetColor();
-                        Console.Write(line[1]);
-                        line = "";
+                        if (x == -1)
+                        {
+                            line += " -";
+                        }
+                        else if (x >= 0 && x < FieldX)
+                        {
+                            line += "--";
+                        }
+                        else if (x < FieldX)
+                        {
+                            line += "- ";
+                        }
                     }
                 }
                 Console.WriteLine(line);
             }
             Console.WriteLine("\n\nUncover: X\nFlag: F");
-        }
+        } // Prints the current state of the field, including mines left and user controls
         public string GetCellString(Cell cell)
         {
-            if (cell.Covered)
+            if (IsFlagged(cell))
             {
-                if (cell.Flagged)
-                {
-                    return "! ";
-                }
-                else
-                {
-                    return "x ";
-                }
+                return "! ";
+            }
+            if (IsCovered(cell))
+            {
+                return "x ";
             }
             else
             {
@@ -181,42 +208,43 @@ namespace Minefield
                 }
                 else if (cell.Contains == 0)
                 {
-                    return "- ";
+                    return "  ";
                 }
                 else
                 {
                     return "* ";
                 }
             }
-        }
+        } // Returns the string that will display for a cell
         public void UncoverCells()
         {
             for (int y = 0; y < FieldY; y++)
             {
                 for (int x = 0; x < FieldX; x++)
                 {
+                    Cell cell = Cells[y][x];
+                    if (IsFlagged(cell))
+                    {
+                        FlagCell(cell);
+                    }
                     UncoverCell(Cells[y][x]);
                 }
             }
-        }
+        } // Uncovers all cells, used only for displaying the entire board after the game is over
         public void FlagMines()
         {
-            for (int y = 0; y < FieldY; y++)
+            foreach (int[] coordinates in MineCoordinates)
             {
-                for (int x = 0; x < FieldX; x++)
-                {
-                    if (Cells[y][x].Contains == -1 && Cells[y][x].Flagged == false && Cells[y][x].Covered)
-                    {
-                        FlagCell(Cells[y][x]);
-                    }
-                }
+                int x = coordinates[0];
+                int y = coordinates[1];
+                FlagCell(Cells[y][x]);
             }
-        }
+        } // Flags all mines, used only for displaying all mines flagged when the player wins
         public void RemovePlayer()
         {
             PlayerX = -1;
             PlayerY = -1;
-        }
+        } // Removes the player from the board so no cells are highlighted
         public bool CheckWin()
         {
             int checkedCells = 0;
@@ -227,26 +255,35 @@ namespace Minefield
                     if (!Cells[y][x].Covered)
                     {
                         checkedCells++;
-                        if (checkedCells + Mines == (FieldX * FieldY))
-                        {
-                            return true;
-                        }
                     }
                 }
             }
-            return false;
-        }
+            if (checkedCells + Mines == (FieldX * FieldY))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        } // Returns whether the win condition has been met
         public void Win()
         {
             Console.Clear();
             UncoverCells();
             FlagMines();
-            PlayerX = -1;
-            PlayerY = -1;
-            CurrentMines = 0;
+            RemovePlayer();
             Console.WriteLine("You win!\n");
             PrintField();
-        }
+        } // Ends the game with a win screen
+        public void Lose()
+        {
+            Console.Clear();
+            Console.WriteLine("You lost!\n");
+            RemovePlayer();
+            UncoverCells();
+            PrintField();
+        } // Ends the game with a lose screen
     }
     class Cell
     {
@@ -326,56 +363,16 @@ namespace Minefield
                 }
             } while (!validInput);
 
-            Console.WriteLine("");
-
             Field field = new Field(x, y, mines);
 
             while (run)
             {
                 Console.Clear();
                 field.PrintField();
+
                 ConsoleKeyInfo input = Console.ReadKey(false);
-                if (input.Key == ConsoleKey.X)
-                {
-                    if (field.IsCovered(field.GetPlayerCell()))
-                    {
-                        if (field.GetPlayerCell().Contains > 0)
-                        {
-                            field.UncoverCell(field.GetPlayerCell());
-                            if (field.CheckWin())
-                            {
-                                field.Win();
-                                run = false;
-                            }
-                        }
-                        else if (field.GetPlayerCell().Contains == 0)
-                        {
-                            field.UncoverSurroundingCells(field.PlayerX, field.PlayerY);
-                            if (field.CheckWin())
-                            {
-                                field.Win();
-                                run = false;
-                            }
-                        }
-                        else if (field.GetPlayerCell().Contains == -1)
-                        {
-                            Console.Clear();
-                            Console.WriteLine("You lost!\n");
-                            field.RemovePlayer();
-                            field.UncoverCells();
-                            field.PrintField();
-                            run = false;
-                        }
-                    }
-                }
-                else if (input.Key == ConsoleKey.F)
-                {
-                    if (field.GetPlayerCell().Covered)
-                    {
-                        field.FlagCell(field.GetPlayerCell());
-                    }
-                }
-                else if (input.Key == ConsoleKey.UpArrow && field.PlayerY > 0)
+
+                if (input.Key == ConsoleKey.UpArrow && field.PlayerY > 0)
                 {
                     field.PlayerY--;
                 }
@@ -390,6 +387,45 @@ namespace Minefield
                 else if (input.Key == ConsoleKey.RightArrow && field.PlayerX < field.FieldX - 1)
                 {
                     field.PlayerX++;
+                }
+                else if (input.Key == ConsoleKey.X)
+                {
+                    if (!field.IsFlagged(field.GetPlayerCell()))
+                    {
+                        if (field.IsCovered(field.GetPlayerCell()))
+                        {
+                            if (field.GetPlayerCell().Contains > 0)
+                            {
+                                field.UncoverCell(field.GetPlayerCell());
+                                if (field.CheckWin())
+                                {
+                                    field.Win();
+                                    run = false;
+                                }
+                            }
+                            else if (field.GetPlayerCell().Contains == 0)
+                            {
+                                field.UncoverSurroundingCells(field.PlayerX, field.PlayerY);
+                                if (field.CheckWin())
+                                {
+                                    field.Win();
+                                    run = false;
+                                }
+                            }
+                            else if (field.GetPlayerCell().Contains == -1)
+                            {
+                                field.Lose();
+                                run = false;
+                            }
+                        }
+                    }
+                }
+                else if (input.Key == ConsoleKey.F)
+                {
+                    if (field.GetPlayerCell().Covered)
+                    {
+                        field.FlagCell(field.GetPlayerCell());
+                    }
                 }
             }
         }
