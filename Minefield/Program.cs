@@ -227,18 +227,25 @@ namespace Minefield
                 }
             }
         } // Returns strings that build the border for the field
-        public void UncoverCells()
+        public void UncoverCells(bool won)
         {
             for (int y = 0; y < FieldY; y++)
             {
                 for (int x = 0; x < FieldX; x++)
                 {
                     Cell cell = Cells[y][x];
-                    if (IsFlagged(cell))
+                    if (won)
                     {
-                        FlagCell(cell);
+                        if (IsFlagged(cell))
+                        {
+                            FlagCell(cell);
+                        }
+                        UncoverCell(cell);
                     }
-                    UncoverCell(Cells[y][x]);
+                    else
+                    {
+                        UncoverCell(cell);
+                    }
                 }
             }
         } // Uncovers all cells, used only for displaying the entire board after the game is over
@@ -281,7 +288,7 @@ namespace Minefield
         public void Win()
         {
             Console.Clear();
-            UncoverCells();
+            UncoverCells(true);
             FlagMines();
             RemovePlayer();
             Console.WriteLine("You win!\n");
@@ -292,7 +299,7 @@ namespace Minefield
             Console.Clear();
             Console.WriteLine("You lost!\n");
             RemovePlayer();
-            UncoverCells();
+            UncoverCells(false);
             PrintField();
         } // Ends the game with a lose screen
     }
