@@ -326,7 +326,7 @@ namespace Minefield
             Colors.Add(0, ConsoleColor.Black);
             Colors.Add(1, ConsoleColor.Blue);
             Colors.Add(2, ConsoleColor.Green);
-            Colors.Add(3, ConsoleColor.Red);
+            Colors.Add(3, ConsoleColor.DarkRed);
             Colors.Add(4, ConsoleColor.DarkMagenta);
             Colors.Add(5, ConsoleColor.Magenta);
             Colors.Add(6, ConsoleColor.Cyan);
