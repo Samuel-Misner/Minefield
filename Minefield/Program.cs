@@ -108,7 +108,7 @@ namespace Minefield
                         if (x >= 0 && x < FieldX)
                         {
                             Cell checkCell = Cells[y][x];
-                            if (checkCell.Covered)
+                            if (IsCovered(checkCell))
                             {
                                 if (IsFlagged(checkCell))
                                 {
@@ -130,10 +130,6 @@ namespace Minefield
             if (IsFlagged(cell))
             {
                 CurrentMines++;
-            }
-            else if (!IsFlagged(cell) && !IsCovered(cell) && cell.Contains == -1)
-            {
-                CurrentMines--;
             }
             else
             {
@@ -243,22 +239,15 @@ namespace Minefield
                 for (int x = 0; x < FieldX; x++)
                 {
                     Cell cell = Cells[y][x];
-                    if (won)
+                    if (won && IsFlagged(cell))
                     {
-                        if (IsFlagged(cell))
-                        {
-                            FlagCell(cell);
-                        }
-                        UncoverCell(cell);
+                        FlagCell(cell);
                     }
-                    else
+                    else if (IsFlagged(cell) && cell.Contains >= 0)
                     {
-                        if (IsFlagged(cell) && cell.Contains >= 0)
-                        {
-                            FlagCell(cell);
-                        }
-                        UncoverCell(cell);
+                        FlagCell(cell);
                     }
+                    UncoverCell(cell);
                 }
             }
         } // Uncovers all cells, used only for displaying the entire board after the game is over
@@ -289,14 +278,7 @@ namespace Minefield
                     }
                 }
             }
-            if (checkedCells + Mines == (FieldX * FieldY))
-            {
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            return checkedCells + Mines == (FieldX * FieldY);
         } // Returns whether the win condition has been met
         public void Win()
         {
@@ -335,17 +317,13 @@ namespace Minefield
     }
     class Program
     {
-        static void Main(string[] args)
+        static Field CreateFieldFromUserInput()
         {
-            bool run = true;
-
             int x = 0;
             int y = 0;
             int mines = 0;
 
-            Random random = new Random();
             Console.WriteLine("What size would you like the field to be?");
-
             Console.Write("x: ");
 
             bool validInput = false;
@@ -394,70 +372,83 @@ namespace Minefield
                 }
             } while (!validInput);
 
-            Field field = new Field(x, y, mines);
+            return new Field(x, y, mines);
+        }
+        static bool ControlHandler(Field field)
+        {
+            ConsoleKeyInfo input = Console.ReadKey(false);
+
+            if (input.Key == ConsoleKey.UpArrow && field.PlayerY > 0)
+            {
+                field.PlayerY--;
+            }
+            else if (input.Key == ConsoleKey.DownArrow && field.PlayerY < field.FieldY - 1)
+            {
+                field.PlayerY++;
+            }
+            else if (input.Key == ConsoleKey.LeftArrow && field.PlayerX > 0)
+            {
+                field.PlayerX--;
+            }
+            else if (input.Key == ConsoleKey.RightArrow && field.PlayerX < field.FieldX - 1)
+            {
+                field.PlayerX++;
+            }
+            else if (input.Key == ConsoleKey.X)
+            {
+                if (!field.IsFlagged(field.GetPlayerCell()) && field.IsCovered(field.GetPlayerCell()))
+                {
+                    return HandleCellContains(field);
+                }
+            }
+            else if (input.Key == ConsoleKey.F)
+            {
+                if (field.GetPlayerCell().Covered)
+                {
+                    field.FlagCell(field.GetPlayerCell());
+                }
+            }
+            return true;
+        }
+        static bool HandleCellContains(Field field)
+        {
+            if (field.GetPlayerCell().Contains > 0)
+            {
+                field.UncoverCell(field.GetPlayerCell());
+                if (field.CheckWin())
+                {
+                    field.Win();
+                    return false;
+                }
+            }
+            else if (field.GetPlayerCell().Contains == 0)
+            {
+                field.UncoverSurroundingCells(field.GetPlayerCell());
+                if (field.CheckWin())
+                {
+                    field.Win();
+                    return false;
+                }
+            }
+            else if (field.GetPlayerCell().Contains == -1)
+            {
+                field.Lose();
+                return false;
+            }
+            return true;
+        }
+        static void Main(string[] args)
+        {
+            Field field = CreateFieldFromUserInput();
+
+            bool run = true;
 
             while (run)
             {
                 Console.Clear();
                 field.PrintField();
 
-                ConsoleKeyInfo input = Console.ReadKey(false);
-
-                if (input.Key == ConsoleKey.UpArrow && field.PlayerY > 0)
-                {
-                    field.PlayerY--;
-                }
-                else if (input.Key == ConsoleKey.DownArrow && field.PlayerY < field.FieldY - 1)
-                {
-                    field.PlayerY++;
-                }
-                else if (input.Key == ConsoleKey.LeftArrow && field.PlayerX > 0)
-                {
-                    field.PlayerX--;
-                }
-                else if (input.Key == ConsoleKey.RightArrow && field.PlayerX < field.FieldX - 1)
-                {
-                    field.PlayerX++;
-                }
-                else if (input.Key == ConsoleKey.X)
-                {
-                    if (!field.IsFlagged(field.GetPlayerCell()))
-                    {
-                        if (field.IsCovered(field.GetPlayerCell()))
-                        {
-                            if (field.GetPlayerCell().Contains > 0)
-                            {
-                                field.UncoverCell(field.GetPlayerCell());
-                                if (field.CheckWin())
-                                {
-                                    field.Win();
-                                    run = false;
-                                }
-                            }
-                            else if (field.GetPlayerCell().Contains == 0)
-                            {
-                                field.UncoverSurroundingCells(field.GetPlayerCell());
-                                if (field.CheckWin())
-                                {
-                                    field.Win();
-                                    run = false;
-                                }
-                            }
-                            else if (field.GetPlayerCell().Contains == -1)
-                            {
-                                field.Lose();
-                                run = false;
-                            }
-                        }
-                    }
-                }
-                else if (input.Key == ConsoleKey.F)
-                {
-                    if (field.GetPlayerCell().Covered)
-                    {
-                        field.FlagCell(field.GetPlayerCell());
-                    }
-                }
+                run = ControlHandler(field);
             }
         }
     }
