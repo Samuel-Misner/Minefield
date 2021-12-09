@@ -143,40 +143,48 @@ namespace Minefield
 
             for (int y = -1; y < FieldY + 1; y++)
             {
-                string line = "";
                 for (int x = -1; x < FieldX + 1; x++)
                 {
                     if (y != -1 && y != FieldY)
                     {
                         if (x != -1 && x != FieldX)
                         {
+                            Cell cell = Cells[y][x];
                             if (!(PlayerX == x && PlayerY == y))
                             {
-                                line += GetCellString(Cells[y][x]);
+                                string str = GetCellString(cell);
+                                if (!IsCovered(cell))
+                                {
+                                    Console.ForegroundColor = cell.Colors[cell.Contains];
+                                    Console.Write(str[0]);
+                                    Console.ResetColor();
+                                    Console.Write(str[1]);
+                                }
+                                else
+                                {
+                                    Console.Write(str);
+                                }
                             }
                             else
                             {
-                                Console.Write(line);
-                                line = "";
-                                line += GetCellString(Cells[y][x]);
+                                string str = GetCellString(cell);
                                 Console.BackgroundColor = ConsoleColor.White;
-                                Console.Write(line[0]);
+                                Console.Write(str[0]);
                                 Console.ResetColor();
-                                Console.Write(line[1]);
-                                line = "";
+                                Console.Write(str[1]);
                             }
                         }
                         else
                         {
-                            line += GetBorderString(x, y);
+                            Console.Write(GetBorderString(x, y));
                         }
                     }
                     else
                     {
-                        line += GetBorderString(x, y);
+                        Console.Write(GetBorderString(x, y));
                     }
                 }
-                Console.WriteLine(line);
+                Console.WriteLine("");
             }
             Console.WriteLine("\n\nUncover: X\nFlag: F");
         } // Prints the current state of the field, including mines left and user controls
@@ -305,6 +313,7 @@ namespace Minefield
         public bool Flagged;
         public int CellX;
         public int CellY;
+        public Dictionary<int, ConsoleColor> Colors = new Dictionary<int, ConsoleColor>();
 
         public Cell(int contains, bool covered, bool flagged, int cellX, int cellY)
         {
@@ -313,7 +322,19 @@ namespace Minefield
             Flagged = flagged;
             CellX = cellX;
             CellY = cellY;
+            Colors.Add(-1, ConsoleColor.Red);
+            Colors.Add(0, ConsoleColor.Black);
+            Colors.Add(1, ConsoleColor.Blue);
+            Colors.Add(2, ConsoleColor.Green);
+            Colors.Add(3, ConsoleColor.Red);
+            Colors.Add(4, ConsoleColor.DarkMagenta);
+            Colors.Add(5, ConsoleColor.Magenta);
+            Colors.Add(6, ConsoleColor.Cyan);
+            Colors.Add(7, ConsoleColor.DarkGray);
+            Colors.Add(8, ConsoleColor.Gray);
         }
+
+        
     }
     class Program
     {
@@ -373,7 +394,7 @@ namespace Minefield
             } while (!validInput);
 
             return new Field(x, y, mines);
-        }
+        } // Asks the user for input and creates a Field based off of input
         static bool ControlHandler(Field field)
         {
             ConsoleKeyInfo input = Console.ReadKey(false);
@@ -409,7 +430,7 @@ namespace Minefield
                 }
             }
             return true;
-        }
+        } // Handles control inputs and returns the result of HandleCellContains
         static bool HandleCellContains(Field field)
         {
             if (field.GetPlayerCell().Contains > 0)
@@ -436,7 +457,7 @@ namespace Minefield
                 return false;
             }
             return true;
-        }
+        } // Handles uncover cell action and returns whether the game should continue or not
         static void Main(string[] args)
         {
             Field field = CreateFieldFromUserInput();
